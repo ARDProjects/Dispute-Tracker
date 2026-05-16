@@ -15,32 +15,22 @@
 body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--c9);color:var(--c1);font-size:13px;line-height:1.5;min-height:100vh}
 
 /* ── SETUP SCREEN ── */
-#setup-screen{position:fixed;inset:0;background:var(--c1);display:flex;align-items:center;justify-content:center;z-index:1000;flex-direction:column;gap:0}
-.setup-box{background:#fff;border-radius:16px;width:520px;max-width:95vw;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.4)}
-.setup-hdr{background:var(--c1);padding:28px 32px 24px;color:#fff}
-.setup-hdr-logo{display:flex;align-items:center;gap:10px;margin-bottom:16px}
-.setup-logo-dot{width:10px;height:10px;border-radius:50%;background:var(--acc2)}
-.setup-hdr h1{font-size:20px;font-weight:700;margin-bottom:6px}
-.setup-hdr p{font-size:13px;color:var(--c5);line-height:1.6}
-.setup-body{padding:28px 32px}
-.setup-steps{margin-bottom:24px}
-.setup-step{display:flex;gap:12px;margin-bottom:16px;align-items:flex-start}
-.step-num{width:24px;height:24px;border-radius:50%;background:var(--acc-bg);color:var(--acc);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
-.step-text{font-size:12px;color:var(--c3);line-height:1.6}
-.step-text strong{color:var(--c1)}
-.step-text a{color:var(--acc);text-decoration:none}
-.step-text code{background:var(--c8);padding:1px 6px;border-radius:4px;font-family:monospace;font-size:11px;color:var(--c2)}
+#setup-screen{position:fixed;inset:0;background:var(--c1);display:flex;align-items:center;justify-content:center;z-index:1000}
+.setup-box{background:#fff;border-radius:16px;width:400px;max-width:95vw;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.4);padding:36px 32px 28px}
+.setup-logo{display:flex;align-items:center;gap:8px;margin-bottom:24px}
+.setup-logo-dot{width:9px;height:9px;border-radius:50%;background:var(--acc2)}
+.setup-logo-text{font-weight:700;font-size:15px;color:var(--c1)}
+.setup-box h2{font-size:18px;font-weight:700;color:var(--c1);margin-bottom:6px}
+.setup-box p{font-size:12px;color:var(--c4);margin-bottom:24px}
 .setup-input-group{display:flex;flex-direction:column;gap:5px;margin-bottom:16px}
 .setup-label{font-size:11px;font-weight:600;color:var(--c3);text-transform:uppercase;letter-spacing:.4px}
-.setup-input{padding:10px 12px;border:1px solid var(--c6);border-radius:var(--rad-sm);font-size:12px;color:var(--c1);outline:none;transition:all .15s;font-family:inherit}
+.setup-input{padding:10px 12px;border:1px solid var(--c6);border-radius:var(--rad-sm);font-size:13px;color:var(--c1);outline:none;transition:all .15s;font-family:inherit;width:100%}
 .setup-input:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(99,102,241,.1)}
 .setup-input.err{border-color:var(--red)}
-.setup-footer{padding:20px 32px;border-top:1px solid var(--c7);display:flex;gap:10px;align-items:center;justify-content:space-between}
-.setup-hint{font-size:11px;color:var(--c5)}
-.setup-btn{padding:10px 24px;background:var(--acc);color:#fff;border:none;border-radius:var(--rad-sm);font-size:13px;font-weight:700;cursor:pointer;transition:background .15s}
-.setup-btn:hover{background:#4f46e5}
-.setup-btn:disabled{opacity:.5;cursor:default}
 .setup-err{font-size:11px;color:var(--red);margin-top:4px;display:none}
+.setup-btn{width:100%;margin-top:8px;padding:11px;background:var(--acc);color:#fff;border:none;border-radius:var(--rad-sm);font-size:13px;font-weight:700;cursor:pointer;transition:background .15s}
+.setup-btn:hover{background:#4f46e5}
+.setup-hint{font-size:11px;color:var(--c5);text-align:center;margin-top:14px}
 
 /* ── CONNECTING SCREEN ── */
 #connecting-screen{position:fixed;inset:0;background:var(--c1);display:none;align-items:center;justify-content:center;z-index:999;flex-direction:column;gap:16px;color:#fff}
@@ -215,31 +205,20 @@ tbody tr:hover .row-actions{opacity:1}
 <!-- ══ SETUP SCREEN ══ -->
 <div id="setup-screen">
   <div class="setup-box">
-    <div class="setup-hdr">
-      <div class="setup-hdr-logo"><span class="setup-logo-dot"></span><span style="font-weight:700;font-size:14px">DisputeOS</span></div>
-      <h1>Connect Your Team Database</h1>
-      <p>This takes 3 minutes. You only do this once — your teammates just open the file and it works.</p>
+    <div class="setup-logo"><span class="setup-logo-dot"></span><span class="setup-logo-text">DisputeOS</span></div>
+    <h2>Welcome</h2>
+    <p>Enter your access details to get started.</p>
+    <div class="setup-input-group">
+      <label class="setup-label">Database URL</label>
+      <input class="setup-input" id="db-url-input" placeholder="https://your-project-default-rtdb.firebaseio.com" autocomplete="off" spellcheck="false">
+      <div class="setup-err" id="url-err">Please enter a valid database URL</div>
     </div>
-    <div class="setup-body">
-      <div class="setup-steps">
-        <div class="setup-step"><div class="step-num">1</div><div class="step-text">Go to <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> → <strong>Create a project</strong> → name it anything (e.g. "dispute-tracker") → disable Google Analytics → click <strong>Create</strong></div></div>
-        <div class="setup-step"><div class="step-num">2</div><div class="step-text">In your project, click <strong>Build → Realtime Database → Create database</strong> → choose any location → start in <strong>test mode</strong> → click <strong>Enable</strong></div></div>
-        <div class="setup-step"><div class="step-num">3</div><div class="step-text">Go to <strong>Project Settings</strong> (gear icon) → scroll to <strong>"Your apps"</strong> → click <strong>&lt;/&gt; Web</strong> → register the app → copy the <code>databaseURL</code> from the config (looks like <code>https://your-project-default-rtdb.firebaseio.com</code>)</div></div>
-      </div>
-      <div class="setup-input-group">
-        <label class="setup-label">Firebase Database URL</label>
-        <input class="setup-input" id="db-url-input" placeholder="https://your-project-default-rtdb.firebaseio.com" autocomplete="off" spellcheck="false">
-        <div class="setup-err" id="url-err">Please enter a valid Firebase Realtime Database URL</div>
-      </div>
-      <div class="setup-input-group">
-        <label class="setup-label">Your Name (shown to teammates)</label>
-        <input class="setup-input" id="setup-name-input" placeholder="e.g. Al" autocomplete="off">
-      </div>
+    <div class="setup-input-group">
+      <label class="setup-label">Your Name</label>
+      <input class="setup-input" id="setup-name-input" placeholder="e.g. Al" autocomplete="off">
     </div>
-    <div class="setup-footer">
-      <span class="setup-hint">🔒 Your data stays in your Firebase — we never see it</span>
-      <button class="setup-btn" id="connect-btn" onclick="connectFirebase()">Connect →</button>
-    </div>
+    <button class="setup-btn" onclick="connectFirebase()">Connect →</button>
+    <div class="setup-hint">🔒 Your data is private and secure</div>
   </div>
 </div>
 
