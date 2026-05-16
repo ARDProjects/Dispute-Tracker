@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DisputeOS — Team Tracker</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --c1:#0f172a;--c2:#1e293b;--c3:#334155;--c4:#64748b;--c5:#94a3b8;--c6:#cbd5e1;--c7:#e2e8f0;--c8:#f1f5f9;--c9:#f8fafc;
+  --acc:#6366f1;--acc2:#818cf8;--acc-bg:#eef2ff;
+  --grn:#10b981;--grn-bg:#d1fae5;--red:#ef4444;--red-bg:#fee2e2;--amb:#f59e0b;--amb-bg:#fef3c7;--sky:#0ea5e9;--sky-bg:#e0f2fe;
+  --rad:10px;--rad-sm:6px;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--c9);color:var(--c1);font-size:13px;line-height:1.5;min-height:100vh}
+
+/* ── SETUP SCREEN ── */
+#setup-screen{position:fixed;inset:0;background:var(--c1);display:flex;align-items:center;justify-content:center;z-index:1000;flex-direction:column;gap:0}
+.setup-box{background:#fff;border-radius:16px;width:520px;max-width:95vw;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.4)}
+.setup-hdr{background:var(--c1);padding:28px 32px 24px;color:#fff}
+.setup-hdr-logo{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.setup-logo-dot{width:10px;height:10px;border-radius:50%;background:var(--acc2)}
+.setup-hdr h1{font-size:20px;font-weight:700;margin-bottom:6px}
+.setup-hdr p{font-size:13px;color:var(--c5);line-height:1.6}
+.setup-body{padding:28px 32px}
+.setup-steps{margin-bottom:24px}
+.setup-step{display:flex;gap:12px;margin-bottom:16px;align-items:flex-start}
+.step-num{width:24px;height:24px;border-radius:50%;background:var(--acc-bg);color:var(--acc);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.step-text{font-size:12px;color:var(--c3);line-height:1.6}
+.step-text strong{color:var(--c1)}
+.step-text a{color:var(--acc);text-decoration:none}
+.step-text code{background:var(--c8);padding:1px 6px;border-radius:4px;font-family:monospace;font-size:11px;color:var(--c2)}
+.setup-input-group{display:flex;flex-direction:column;gap:5px;margin-bottom:16px}
+.setup-label{font-size:11px;font-weight:600;color:var(--c3);text-transform:uppercase;letter-spacing:.4px}
+.setup-input{padding:10px 12px;border:1px solid var(--c6);border-radius:var(--rad-sm);font-size:12px;color:var(--c1);outline:none;transition:all .15s;font-family:inherit}
+.setup-input:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(99,102,241,.1)}
+.setup-input.err{border-color:var(--red)}
+.setup-footer{padding:20px 32px;border-top:1px solid var(--c7);display:flex;gap:10px;align-items:center;justify-content:space-between}
+.setup-hint{font-size:11px;color:var(--c5)}
+.setup-btn{padding:10px 24px;background:var(--acc);color:#fff;border:none;border-radius:var(--rad-sm);font-size:13px;font-weight:700;cursor:pointer;transition:background .15s}
+.setup-btn:hover{background:#4f46e5}
+.setup-btn:disabled{opacity:.5;cursor:default}
+.setup-err{font-size:11px;color:var(--red);margin-top:4px;display:none}
+
+/* ── CONNECTING SCREEN ── */
+#connecting-screen{position:fixed;inset:0;background:var(--c1);display:none;align-items:center;justify-content:center;z-index:999;flex-direction:column;gap:16px;color:#fff}
+.spinner{width:36px;height:36px;border:3px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.conn-text{font-size:14px;color:var(--c5)}
+
+/* ── TOPBAR ── */
+.topbar{background:var(--c1);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:52px}
+.logo{font-weight:700;font-size:15px;color:#fff;display:flex;align-items:center;gap:8px}
+.logo-dot{width:8px;height:8px;border-radius:50%;background:var(--acc2)}
+.topbar-nav{display:flex;gap:2px}
+.tnav{padding:6px 12px;border-radius:var(--rad-sm);color:var(--c5);font-size:12px;cursor:pointer;border:none;background:none}
+.tnav.active{color:#fff;background:var(--c2)}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 2px rgba(34,197,94,.3)}
+.sync-dot.off{background:var(--c4);box-shadow:none}
+.sync-label{font-size:11px;color:var(--c5)}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--acc);display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;cursor:pointer;transition:opacity .15s}
+.avatar:hover{opacity:.85}
+.badge-count{background:var(--red);color:#fff;border-radius:10px;font-size:10px;font-weight:700;padding:1px 6px}
+
+/* ── STATS ── */
+.statsbar{background:#fff;border-bottom:1px solid var(--c7);padding:14px 24px;display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.stat{padding:12px 16px;border-radius:var(--rad);border:1px solid var(--c7);background:var(--c9)}
+.stat-label{font-size:10px;color:var(--c4);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;display:flex;align-items:center;gap:5px}
+.stat-val{font-size:21px;font-weight:700;color:var(--c1)}
+.stat-sub{font-size:11px;color:var(--c4);margin-top:2px}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+.dot-grn{background:var(--grn)}.dot-red{background:var(--red)}.dot-amb{background:var(--amb)}.dot-pur{background:var(--acc)}
+
+/* ── MAIN ── */
+.main{display:grid;grid-template-columns:260px 1fr;height:calc(100vh - 128px)}
+.sidebar{background:#fff;border-right:1px solid var(--c7);overflow-y:auto;padding:14px 0}
+.sb-head{padding:5px 18px;font-size:10px;font-weight:700;color:var(--c5);text-transform:uppercase;letter-spacing:.8px}
+.sb-row{display:flex;align-items:center;justify-content:space-between;padding:7px 18px;cursor:pointer;transition:background .1s;gap:8px}
+.sb-row:hover{background:var(--c8)}
+.sb-row.active{background:var(--acc-bg);border-right:3px solid var(--acc)}
+.sb-row.active .sb-name{color:var(--acc);font-weight:600}
+.sb-name{font-size:12px;color:var(--c2);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-ct{font-size:11px;font-weight:600;padding:2px 7px;border-radius:10px;background:var(--c7);color:var(--c3)}
+.sb-ct.hot{background:var(--red-bg);color:var(--red)}
+.sb-ct.med{background:var(--amb-bg);color:var(--amb)}
+.pav{width:24px;height:24px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0}
+
+/* ── CONTENT ── */
+.content{overflow-y:auto;background:var(--c9)}
+.toolbar{display:flex;align-items:center;gap:8px;padding:12px 18px;background:#fff;border-bottom:1px solid var(--c7);position:sticky;top:0;z-index:10;flex-wrap:wrap}
+.search{position:relative;flex:1;min-width:180px;max-width:260px}
+.search input{width:100%;padding:7px 10px 7px 30px;border:1px solid var(--c6);border-radius:var(--rad-sm);font-size:12px;background:var(--c8);color:var(--c1);outline:none;transition:all .15s}
+.search input:focus{border-color:var(--acc);background:#fff;box-shadow:0 0 0 3px rgba(99,102,241,.1)}
+.si{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--c5);font-size:13px;pointer-events:none}
+.filter-btn{padding:6px 11px;border:1px solid var(--c6);border-radius:var(--rad-sm);background:#fff;color:var(--c3);font-size:11px;cursor:pointer;white-space:nowrap;transition:all .15s}
+.filter-btn:hover,.filter-btn.on{border-color:var(--acc);color:var(--acc);background:var(--acc-bg)}
+.add-btn{margin-left:auto;padding:7px 16px;background:var(--acc);color:#fff;border:none;border-radius:var(--rad-sm);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
+.add-btn:hover{background:#4f46e5}
+.export-btn{padding:7px 12px;border:1px solid var(--c6);border-radius:var(--rad-sm);background:#fff;color:var(--c3);font-size:11px;cursor:pointer;white-space:nowrap}
+.export-btn:hover{border-color:var(--grn);color:var(--grn)}
+
+/* ── TABLE ── */
+.table-wrap{padding:14px 18px}
+table{width:100%;border-collapse:collapse;background:#fff;border-radius:var(--rad);overflow:hidden;border:1px solid var(--c7);table-layout:fixed}
+th{padding:9px 10px;text-align:left;font-size:10px;font-weight:600;color:var(--c4);text-transform:uppercase;letter-spacing:.5px;background:var(--c9);border-bottom:1px solid var(--c7);cursor:pointer;user-select:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+th:hover{color:var(--acc)}
+td{padding:9px 10px;border-bottom:1px solid var(--c7);vertical-align:middle;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tbody tr{cursor:pointer;transition:background .1s}
+tbody tr:hover td{background:#f8faff}
+tbody tr.sel td{background:var(--acc-bg)}
+.sa{margin-left:3px;opacity:.4;font-size:9px}
+.amt{font-weight:700;font-size:12px}
+.dt{color:var(--c4);font-size:11px}
+.pn{font-weight:500;font-size:12px;max-width:130px;overflow:hidden;text-overflow:ellipsis;display:block}
+.pg{font-size:11px;color:var(--c3);max-width:140px;overflow:hidden;text-overflow:ellipsis;display:block}
+.row-actions{display:flex;gap:4px;opacity:0;transition:opacity .15s}
+tbody tr:hover .row-actions{opacity:1}
+.ra-btn{padding:3px 8px;border-radius:4px;font-size:10px;font-weight:600;cursor:pointer;border:none;transition:all .12s}
+.ra-edit{background:var(--acc-bg);color:var(--acc)}.ra-edit:hover{background:var(--acc);color:#fff}
+.ra-del{background:var(--red-bg);color:var(--red)}.ra-del:hover{background:var(--red);color:#fff}
+
+/* ── PILLS ── */
+.pill{display:inline-flex;align-items:center;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;white-space:nowrap}
+.p-grn{background:var(--grn-bg);color:#065f46}.p-red{background:var(--red-bg);color:#991b1b}
+.p-amb{background:var(--amb-bg);color:#92400e}.p-sky{background:var(--sky-bg);color:#0c4a6e}
+.p-gray{background:var(--c7);color:var(--c3)}.p-pur{background:var(--acc-bg);color:#3730a3}
+
+/* ── PAGINATION ── */
+.pagination{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;background:#fff;border-top:1px solid var(--c7);margin:0 18px;border-radius:0 0 var(--rad) var(--rad)}
+.pg-info{font-size:11px;color:var(--c4)}
+.pg-btns{display:flex;gap:4px}
+.pg-btn{padding:4px 9px;border:1px solid var(--c6);border-radius:4px;background:#fff;color:var(--c3);font-size:11px;cursor:pointer;transition:all .1s}
+.pg-btn:hover:not(:disabled){border-color:var(--acc);color:var(--acc)}
+.pg-btn:disabled{opacity:.35;cursor:default}
+.pg-btn.cur{background:var(--acc);color:#fff;border-color:var(--acc)}
+
+/* ── OVERLAY / PANEL ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:200;opacity:0;pointer-events:none;transition:opacity .2s}
+.overlay.show{opacity:1;pointer-events:all}
+.dpanel{position:fixed;right:0;top:0;width:420px;height:100vh;background:#fff;border-left:1px solid var(--c7);box-shadow:-4px 0 24px rgba(0,0,0,.1);z-index:300;overflow-y:auto;transform:translateX(100%);transition:transform .25s cubic-bezier(.4,0,.2,1)}
+.dpanel.open{transform:translateX(0)}
+.dp-hdr{padding:18px 22px 14px;border-bottom:1px solid var(--c7);position:sticky;top:0;background:#fff;z-index:1;display:flex;align-items:flex-start;justify-content:space-between}
+.dp-title{font-size:15px;font-weight:700;color:var(--c1)}
+.dp-sub{font-size:11px;color:var(--c4);margin-top:2px}
+.dp-close{width:26px;height:26px;border-radius:50%;border:1px solid var(--c6);background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--c4);font-size:13px;flex-shrink:0}
+.dp-close:hover{background:var(--c8)}
+.dp-body{padding:18px 22px}
+.dp-sec{margin-bottom:18px}
+.dp-sec-title{font-size:9px;font-weight:700;color:var(--c5);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px}
+.dp-field{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--c7)}
+.dp-field:last-child{border-bottom:none}
+.dp-k{font-size:11px;color:var(--c4);flex:0 0 110px}
+.dp-v{font-size:11px;color:var(--c1);font-weight:500;text-align:right;flex:1}
+.dp-acts{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.dp-btn{flex:1;min-width:90px;padding:8px 10px;border-radius:var(--rad-sm);font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--c6);background:#fff;color:var(--c2);transition:all .15s;text-align:center}
+.dp-btn:hover{border-color:var(--acc);color:var(--acc);background:var(--acc-bg)}
+.dp-btn.primary{background:var(--acc);color:#fff;border-color:var(--acc)}.dp-btn.primary:hover{background:#4f46e5}
+.dp-btn.danger{border-color:var(--red);color:var(--red)}.dp-btn.danger:hover{background:var(--red-bg)}
+.tl-item{display:flex;gap:10px;margin-bottom:12px}
+.tl-dot-wrap{display:flex;flex-direction:column;align-items:center}
+.tl-dot{width:8px;height:8px;border-radius:50%;margin-top:2px;flex-shrink:0}
+.tl-line{width:1px;flex:1;background:var(--c7);margin-top:2px}
+.tl-ev{font-size:11px;color:var(--c2);font-weight:500}
+.tl-ts{font-size:10px;color:var(--c5)}
+.added-by{font-size:10px;color:var(--c5);margin-top:8px;padding-top:8px;border-top:1px solid var(--c7)}
+
+/* ── MODAL ── */
+.modal{position:fixed;inset:0;z-index:400;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0;transition:opacity .2s}
+.modal.show{opacity:1;pointer-events:all}
+.modal-bg{position:absolute;inset:0;background:rgba(0,0,0,.45)}
+.modal-box{position:relative;background:#fff;border-radius:14px;width:580px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.modal-hdr{padding:20px 24px 16px;border-bottom:1px solid var(--c7);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;z-index:1}
+.modal-title{font-size:15px;font-weight:700;color:var(--c1)}
+.modal-close{width:28px;height:28px;border-radius:50%;border:1px solid var(--c6);background:#fff;cursor:pointer;font-size:14px;color:var(--c4);display:flex;align-items:center;justify-content:center}
+.modal-close:hover{background:var(--c8)}
+.modal-body{padding:20px 24px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group.full{grid-column:1/-1}
+.form-label{font-size:11px;font-weight:600;color:var(--c3);text-transform:uppercase;letter-spacing:.4px}
+.form-input,.form-select{padding:8px 10px;border:1px solid var(--c6);border-radius:var(--rad-sm);font-size:12px;color:var(--c1);background:#fff;outline:none;transition:all .15s;width:100%;font-family:inherit}
+.form-input:focus,.form-select:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(99,102,241,.1)}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--c7);display:flex;gap:10px;justify-content:flex-end;position:sticky;bottom:0;background:#fff}
+.btn-cancel{padding:8px 18px;border:1px solid var(--c6);border-radius:var(--rad-sm);background:#fff;color:var(--c3);font-size:12px;font-weight:600;cursor:pointer}
+.btn-cancel:hover{border-color:var(--c4);color:var(--c1)}
+.btn-save{padding:8px 22px;background:var(--acc);color:#fff;border:none;border-radius:var(--rad-sm);font-size:12px;font-weight:700;cursor:pointer}
+.btn-save:hover{background:#4f46e5}
+
+/* ── NAME MODAL ── */
+.name-modal{position:fixed;inset:0;z-index:800;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.5)}
+.name-box{background:#fff;border-radius:12px;padding:28px 32px;width:360px;box-shadow:0 16px 48px rgba(0,0,0,.2)}
+.name-box h2{font-size:16px;font-weight:700;margin-bottom:6px}
+.name-box p{font-size:12px;color:var(--c4);margin-bottom:18px}
+.name-box input{width:100%;padding:10px 12px;border:1px solid var(--c6);border-radius:var(--rad-sm);font-size:13px;outline:none;margin-bottom:14px;font-family:inherit}
+.name-box input:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(99,102,241,.1)}
+.name-box button{width:100%;padding:10px;background:var(--acc);color:#fff;border:none;border-radius:var(--rad-sm);font-size:13px;font-weight:700;cursor:pointer}
+.name-box button:hover{background:#4f46e5}
+
+/* ── CONFIRM / TOAST ── */
+.confirm-box{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--c1);color:#fff;padding:12px 20px;border-radius:10px;display:flex;align-items:center;gap:14px;font-size:12px;z-index:500;opacity:0;pointer-events:none;transition:all .2s;white-space:nowrap}
+.confirm-box.show{opacity:1;pointer-events:all}
+.confirm-yes{padding:5px 14px;background:var(--red);border:none;border-radius:6px;color:#fff;font-size:11px;font-weight:700;cursor:pointer}
+.confirm-no{padding:5px 14px;background:rgba(255,255,255,.15);border:none;border-radius:6px;color:#fff;font-size:11px;cursor:pointer}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--c1);color:#fff;padding:10px 18px;border-radius:8px;font-size:12px;font-weight:500;z-index:600;opacity:0;transform:translateY(8px);transition:all .25s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.grn{background:#065f46}
+.toast.err{background:#991b1b}
+.empty-state{text-align:center;padding:48px;color:var(--c5)}
+</style>
+</head>
+<body>
+
+<!-- ══ SETUP SCREEN ══ -->
+<div id="setup-screen">
+  <div class="setup-box">
+    <div class="setup-hdr">
+      <div class="setup-hdr-logo"><span class="setup-logo-dot"></span><span style="font-weight:700;font-size:14px">DisputeOS</span></div>
+      <h1>Connect Your Team Database</h1>
+      <p>This takes 3 minutes. You only do this once — your teammates just open the file and it works.</p>
+    </div>
+    <div class="setup-body">
+      <div class="setup-steps">
+        <div class="setup-step"><div class="step-num">1</div><div class="step-text">Go to <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> → <strong>Create a project</strong> → name it anything (e.g. "dispute-tracker") → disable Google Analytics → click <strong>Create</strong></div></div>
+        <div class="setup-step"><div class="step-num">2</div><div class="step-text">In your project, click <strong>Build → Realtime Database → Create database</strong> → choose any location → start in <strong>test mode</strong> → click <strong>Enable</strong></div></div>
+        <div class="setup-step"><div class="step-num">3</div><div class="step-text">Go to <strong>Project Settings</strong> (gear icon) → scroll to <strong>"Your apps"</strong> → click <strong>&lt;/&gt; Web</strong> → register the app → copy the <code>databaseURL</code> from the config (looks like <code>https://your-project-default-rtdb.firebaseio.com</code>)</div></div>
+      </div>
+      <div class="setup-input-group">
+        <label class="setup-label">Firebase Database URL</label>
+        <input class="setup-input" id="db-url-input" placeholder="https://your-project-default-rtdb.firebaseio.com" autocomplete="off" spellcheck="false">
+        <div class="setup-err" id="url-err">Please enter a valid Firebase Realtime Database URL</div>
+      </div>
+      <div class="setup-input-group">
+        <label class="setup-label">Your Name (shown to teammates)</label>
+        <input class="setup-input" id="setup-name-input" placeholder="e.g. Al" autocomplete="off">
+      </div>
+    </div>
+    <div class="setup-footer">
+      <span class="setup-hint">🔒 Your data stays in your Firebase — we never see it</span>
+      <button class="setup-btn" id="connect-btn" onclick="connectFirebase()">Connect →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CONNECTING ══ -->
+<div id="connecting-screen">
+  <div class="spinner"></div>
+  <div class="conn-text">Connecting to your database…</div>
+</div>
+
+<!-- ══ APP ══ -->
+<div id="app" style="display:none">
+
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:16px">
+    <div class="logo"><span class="logo-dot"></span>DisputeOS</div>
+    <div class="topbar-nav"><button class="tnav active">Tracker</button></div>
+  </div>
+  <div class="topbar-right">
+    <span class="sync-dot" id="sync-dot"></span>
+    <span class="sync-label" id="sync-label">Live</span>
+    <span class="badge-count" id="open-count">0</span>
+    <div class="avatar" id="user-avatar" title="Change name" onclick="changeName()">AL</div>
+  </div>
+</div>
+
+<div class="statsbar" id="statsbar"></div>
+
+<div class="main">
+  <div class="sidebar">
+    <div style="margin-bottom:8px"><div class="sb-head">By Provider</div><div id="provider-list"></div></div>
+    <div><div class="sb-head">By Reason</div><div id="reason-list"></div></div>
+  </div>
+  <div class="content">
+    <div class="toolbar">
+      <div class="search"><span class="si">⌕</span><input type="text" id="search-input" placeholder="Search disputes…"></div>
+      <button class="filter-btn" id="f-fraud" onclick="toggleFilter('Fraudulent')">🚨 Fraudulent</button>
+      <button class="filter-btn" id="f-dup" onclick="toggleFilter('Duplicate')">🔁 Duplicate</button>
+      <button class="filter-btn" id="f-sub" onclick="toggleFilter('Subscription canceled')">⊘ Sub Canceled</button>
+      <button class="export-btn" onclick="exportCSV()">⬇ Export CSV</button>
+      <button class="add-btn" onclick="openModal()">+ Add Dispute</button>
+    </div>
+    <div class="table-wrap">
+      <table id="main-table">
+        <thead><tr>
+          <th style="width:86px" onclick="sortBy('date')">Date<span class="sa" id="s-date">↕</span></th>
+          <th style="width:138px" onclick="sortBy('provider')">Provider<span class="sa" id="s-provider">↕</span></th>
+          <th style="width:102px" onclick="sortBy('parent')">Parent<span class="sa" id="s-parent">↕</span></th>
+          <th style="width:118px">Program</th>
+          <th style="width:66px" onclick="sortBy('amount')">Amount<span class="sa" id="s-amount">↕</span></th>
+          <th style="width:80px">Reason</th>
+          <th style="width:60px">Refund</th>
+          <th style="width:88px">Status</th>
+          <th style="width:74px">Outcome</th>
+          <th style="width:78px"></th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div id="empty" class="empty-state" style="display:none"><div style="font-size:32px;margin-bottom:10px">🔍</div><div>No disputes match your filters</div></div>
+    </div>
+    <div class="pagination"><span class="pg-info" id="pg-info"></span><div class="pg-btns" id="pg-btns"></div></div>
+  </div>
+</div>
+</div><!-- end #app -->
+
+<!-- OVERLAY -->
+<div class="overlay" id="overlay" onclick="closePanel()"></div>
+
+<!-- DETAIL PANEL -->
+<div class="dpanel" id="dpanel">
+  <div class="dp-hdr">
+    <div><div class="dp-title" id="dp-title"></div><div class="dp-sub" id="dp-sub"></div></div>
+    <button class="dp-close" onclick="closePanel()">✕</button>
+  </div>
+  <div class="dp-body" id="dp-body"></div>
+</div>
+
+<!-- ADD/EDIT MODAL -->
+<div class="modal" id="modal">
+  <div class="modal-bg" onclick="closeModal()"></div>
+  <div class="modal-box">
+    <div class="modal-hdr"><div class="modal-title" id="modal-title">Add Dispute</div><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label">Date Submitted</label><input class="form-input" id="f-date" placeholder="e.g. May 16, 2026"></div>
+        <div class="form-group"><label class="form-label">Payment Date</label><input class="form-input" id="f-paydate" placeholder="e.g. May 10, 2026"></div>
+        <div class="form-group full"><label class="form-label">Provider</label><input class="form-input" id="f-provider" placeholder="Organization name"></div>
+        <div class="form-group"><label class="form-label">Parent Name</label><input class="form-input" id="f-parent" placeholder="Family name"></div>
+        <div class="form-group"><label class="form-label">Parent Email</label><input class="form-input" id="f-email" type="email" placeholder="email@example.com"></div>
+        <div class="form-group full"><label class="form-label">Program Name</label><input class="form-input" id="f-program" placeholder="Program or service name"></div>
+        <div class="form-group"><label class="form-label">Dispute Amount ($)</label><input class="form-input" id="f-amount" type="number" step="0.01" placeholder="0.00"></div>
+        <div class="form-group"><label class="form-label">Reason</label><select class="form-select" id="f-reason"><option value="">— Select —</option><option>Fraudulent</option><option>Duplicate</option><option>Subscription canceled</option><option>Other</option></select></div>
+        <div class="form-group"><label class="form-label">Refund Issued?</label><select class="form-select" id="f-refund"><option value="">— Select —</option><option>No</option><option>Yes</option><option>Unsure</option></select></div>
+        <div class="form-group"><label class="form-label">Deadline to Respond</label><input class="form-input" id="f-deadline" placeholder="e.g. Jun 1, 2026"></div>
+        <div class="form-group"><label class="form-label">Evidence Submitted?</label><select class="form-select" id="f-evidence"><option value="">— Select —</option><option>Yes</option><option>No</option></select></div>
+        <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="f-status"><option value="">— Select —</option><option>Waiting on Stripe</option><option>Waiting on Client</option><option>Closed</option></select></div>
+        <div class="form-group"><label class="form-label">Outcome</label><select class="form-select" id="f-outcome"><option value="">— Pending —</option><option>Dispute Lost</option><option>Accepted Dispute</option></select></div>
+        <div class="form-group"><label class="form-label">Charged Client?</label><select class="form-select" id="f-charged"><option value="">— Select —</option><option>Yes</option><option>No</option><option>Unsure</option></select></div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn-cancel" onclick="closeModal()">Cancel</button><button class="btn-save" onclick="saveDispute()">Save Dispute</button></div>
+  </div>
+</div>
+
+<!-- CONFIRM DELETE -->
+<div class="confirm-box" id="confirm-box">
+  <span>Delete this dispute?</span>
+  <button class="confirm-yes" id="confirm-yes">Delete</button>
+  <button class="confirm-no" onclick="hideConfirm()">Cancel</button>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getDatabase, ref, set, push, remove, onValue, off } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+// ── STATE ──
+let db, disputesRef, disputes=[], sortKey='date', sortDir=1, search='', filterProvider='', filterReason='', page=1, selRow=null, editId=null, pendingDelete=null;
+const PER=10;
+const COLORS=['#6366f1','#0ea5e9','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#14b8a6'];
+const colorMap={};let ci=0;
+function pc(p){if(!colorMap[p])colorMap[p]=COLORS[ci++%COLORS.length];return colorMap[p]}
+
+let userName = localStorage.getItem('disputeos_name')||'';
+let dbURL = localStorage.getItem('disputeos_db')||'';
+
+// ── BOOT ──
+if(dbURL && userName){
+  document.getElementById('setup-screen').style.display='none';
+  bootApp(dbURL);
+} else {
+  if(dbURL) document.getElementById('db-url-input').value=dbURL;
+  if(userName) document.getElementById('setup-name-input').value=userName;
+}
+
+window.connectFirebase = function(){
+  const url = document.getElementById('db-url-input').value.trim().replace(/\/$/,'');
+  const name = document.getElementById('setup-name-input').value.trim();
+  const errEl = document.getElementById('url-err');
+  if(!url.includes('firebaseio.com')){errEl.style.display='block';document.getElementById('db-url-input').classList.add('err');return;}
+  errEl.style.display='none';
+  if(!name){document.getElementById('setup-name-input').focus();return;}
+  localStorage.setItem('disputeos_db', url);
+  localStorage.setItem('disputeos_name', name);
+  dbURL=url; userName=name;
+  document.getElementById('setup-screen').style.display='none';
+  bootApp(url);
+};
+
+function bootApp(url){
+  document.getElementById('connecting-screen').style.display='flex';
+  try{
+    const app = initializeApp({databaseURL: url, apiKey:'local', projectId:'local'}, 'disputeos-'+Math.random());
+    db = getDatabase(app);
+    disputesRef = ref(db,'disputes');
+    // listen for real-time changes
+    onValue(disputesRef, snap=>{
+      document.getElementById('connecting-screen').style.display='none';
+      document.getElementById('app').style.display='block';
+      setSyncStatus(true);
+      const val=snap.val();
+      disputes = val ? Object.entries(val).map(([fbKey,d])=>({...d,fbKey})) : [];
+      // seed default data if empty
+      if(disputes.length===0) seedDefaults();
+      render();
+    }, err=>{
+      document.getElementById('connecting-screen').style.display='none';
+      setSyncStatus(false);
+      showToast('Connection error — check your database URL','err');
+      setTimeout(()=>{
+        localStorage.removeItem('disputeos_db');
+        location.reload();
+      },3000);
+    });
+  }catch(e){
+    document.getElementById('connecting-screen').style.display='none';
+    showToast('Invalid Firebase config — please try again','err');
+    setTimeout(()=>location.reload(),2500);
+  }
+}
+
+function setSyncStatus(on){
+  document.getElementById('sync-dot').className='sync-dot'+(on?'':' off');
+  document.getElementById('sync-label').textContent=on?'Live':'Offline';
+}
+
+// ── USER ──
+function updateAvatar(){
+  const el=document.getElementById('user-avatar');
+  if(el){el.textContent=userName.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()||'?';el.title=userName+' (click to change)';}
+}
+window.changeName=function(){
+  const n=prompt('Your name:',userName);
+  if(n&&n.trim()){userName=n.trim();localStorage.setItem('disputeos_name',userName);updateAvatar();}
+};
+setTimeout(updateAvatar,100);
+
+// ── SEED ──
+const DEFAULT=[
+  {id:'D001',date:'Jan 11, 2026',provider:'Higher Heights Youth Empowerment Programs, Inc.',parent:'Wright Family',email:'Nkingwood@gmail.com',program:'2025–2026 College Access Program (Fall Session)',payDate:'Jan 4, 2026',amount:84.91,reason:'Fraudulent',refund:'No',deadline:'Mar 1, 2026',evidence:'Yes',status:'Closed',outcome:'Dispute Lost',charged:'Yes'},
+  {id:'D002',date:'Feb 22, 2026',provider:'Palmer Drug Abuse Program – Houston Inc',parent:'Senegal Family',email:'vdanielles@hotmail.com',program:'PLAN 3',payDate:'Jan 29, 2026',amount:150.00,reason:'Duplicate',refund:'No',deadline:'Feb 6, 2026',evidence:'No',status:'Closed',outcome:'Dispute Lost',charged:'Unsure'},
+  {id:'D003',date:'Apr 4, 2026',provider:'Higher Heights Youth Empowerment Programs, Inc.',parent:'Lindsay Family',email:'clindsay281@gmail.com',program:'2026-2027COLLEGEACCESS',payDate:'Mar 27, 2026',amount:103.20,reason:'Subscription canceled',refund:'No',deadline:'Apr 19, 2026',evidence:'No',status:'Closed',outcome:'Accepted Dispute',charged:'Yes'},
+  {id:'D004',date:'Apr 10, 2026',provider:'Foundation Academy Charter School',parent:'Ivory Family',email:'mzjennette07@gmail.com',program:'BEFORECAREPROGRAM',payDate:'Apr 2, 2026',amount:123.78,reason:'Fraudulent',refund:'No',deadline:'May 20, 2026',evidence:'Yes',status:'Waiting on Stripe',outcome:'',charged:''},
+  {id:'D005',date:'Apr 16, 2026',provider:'Nehemiah Community Empowerment Center, Inc',parent:'Amber Cohen',email:'ambercohen@yahoo.com',program:'2026STEMSUMMERCAMP311',payDate:'Mar 16, 2026',amount:50.72,reason:'Duplicate',refund:'No',deadline:'May 2, 2026',evidence:'No',status:'Closed',outcome:'Dispute Lost',charged:'No'},
+  {id:'D006',date:'May 1, 2026',provider:'Foundation Academy Charter School',parent:'Harris Family',email:'nasiaharris2519@gmail.com',program:'Foundation Academy K-8 Aftercare 25-26 SY',payDate:'May 1, 2026',amount:247.26,reason:'Subscription canceled',refund:'Unsure',deadline:'May 19, 2026',evidence:'No',status:'Waiting on Client',outcome:'',charged:''},
+  {id:'D007',date:'May 4, 2026',provider:'Halls Enterprises Group',parent:'Torres Family',email:'katiria_1086@yahoo.com',program:'6AMEARLYDROPOFF2025-21',payDate:'Apr 28, 2026',amount:62.04,reason:'Fraudulent',refund:'No',deadline:'May 21, 2026',evidence:'Yes',status:'Waiting on Stripe',outcome:'',charged:''},
+  {id:'D008',date:'May 4, 2026',provider:'Halls Enterprises Group',parent:'Torres Family',email:'katiria_1086@yahoo.com',program:'6AMEARLYDROPOFF2025-21',payDate:'Apr 28, 2026',amount:62.04,reason:'Fraudulent',refund:'No',deadline:'May 24, 2026',evidence:'Yes',status:'Waiting on Stripe',outcome:'',charged:''},
+  {id:'D009',date:'May 4, 2026',provider:'Halls Enterprises Group',parent:'Torres Family',email:'katiria_1086@yahoo.com',program:'6AMEARLYDROPOFF2025-20',payDate:'Apr 28, 2026',amount:62.04,reason:'Fraudulent',refund:'No',deadline:'May 24, 2026',evidence:'Yes',status:'Waiting on Stripe',outcome:'',charged:''},
+  {id:'D010',date:'May 4, 2026',provider:'Halls Enterprises Group',parent:'Torres Family',email:'katiria_1086@yahoo.com',program:'6AMEARLYDROPOFF2025-24',payDate:'Apr 28, 2026',amount:62.04,reason:'Fraudulent',refund:'No',deadline:'May 24, 2026',evidence:'Yes',status:'Waiting on Stripe',outcome:'',charged:''},
+  {id:'D011',date:'May 4, 2026',provider:'Halls Enterprises Group',parent:'Torres Family',email:'katiria_1086@yahoo.com',program:'6AMEARLYDROPOFF2025-20',payDate:'Apr 28, 2026',amount:62.04,reason:'Fraudulent',refund:'No',deadline:'May 24, 2026',evidence:'Yes',status:'Waiting on Stripe',outcome:'',charged:''},
+  {id:'D012',date:'May 4, 2026',provider:'Halls Enterprises Group',parent:'Torres Family',email:'katiria_1086@yahoo.com',program:'6AMEARLYDROPOFF2025-25',payDate:'Apr 28, 2026',amount:62.04,reason:'Fraudulent',refund:'No',deadline:'May 24, 2026',evidence:'Yes',status:'Waiting on Stripe',outcome:'',charged:''},
+  {id:'D013',date:'May 5, 2026',provider:'Halls Enterprises Group',parent:'Torres Family',email:'katiria_1086@yahoo.com',program:'6AMEARLYDROPOFF2025-22',payDate:'Apr 28, 2026',amount:62.04,reason:'Fraudulent',refund:'No',deadline:'May 25, 2026',evidence:'Yes',status:'Waiting on Stripe',outcome:'',charged:''},
+  {id:'D014',date:'May 5, 2026',provider:'Halls Enterprises Group',parent:'Torres Family',email:'katiria_1086@yahoo.com',program:'6AMEARLYDROPOFF2025-25',payDate:'Apr 28, 2026',amount:62.04,reason:'Fraudulent',refund:'No',deadline:'May 25, 2026',evidence:'Yes',status:'Waiting on Stripe',outcome:'',charged:''},
+  {id:'D015',date:'May 12, 2026',provider:'Young Explorers Centers Enrichment',parent:'Budhwani Family',email:'naushadbbudhwani@gmail.com',program:'Annual Registration Fee (2026-2027) @Harrisburg',payDate:'May 11, 2026',amount:26.03,reason:'Fraudulent',refund:'Unsure',deadline:'Jun 22, 2026',evidence:'No',status:'Waiting on Client',outcome:'',charged:''},
+];
+async function seedDefaults(){for(const d of DEFAULT){const r=push(disputesRef);await set(r,{...d,addedBy:'System',addedAt:new Date().toISOString()});}}
+
+// ── PILLS ──
+function sPill(s){if(!s)return'<span class="pill p-gray">—</span>';if(s==='Closed')return'<span class="pill p-gray">Closed</span>';if(s.includes('Stripe'))return'<span class="pill p-sky">⟳ Stripe</span>';if(s.includes('Client'))return'<span class="pill p-amb">⏳ Client</span>';return`<span class="pill p-pur">${s}</span>`;}
+function oPill(o){if(!o)return'<span class="pill p-gray">Pending</span>';if(o==='Dispute Lost')return'<span class="pill p-red">Lost</span>';if(o==='Accepted Dispute')return'<span class="pill p-grn">Won</span>';return`<span class="pill p-gray">${o}</span>`;}
+function rPill(r){if(r==='No')return'<span class="pill p-red">No</span>';if(r==='Yes')return'<span class="pill p-grn">Yes</span>';if(r==='Unsure')return'<span class="pill p-amb">?</span>';return'—';}
+function rnPill(r){if(r==='Fraudulent')return'<span class="pill p-red">🚨 Fraud</span>';if(r==='Duplicate')return'<span class="pill p-amb">🔁 Dup</span>';if(r==='Subscription canceled')return'<span class="pill p-sky">⊘ Sub</span>';return`<span class="pill p-gray">${r||'—'}</span>`;}
+
+// ── FILTER ──
+function getFiltered(){
+  let d=[...disputes];
+  if(search){const t=search.toLowerCase();d=d.filter(r=>r.provider.toLowerCase().includes(t)||r.parent.toLowerCase().includes(t)||(r.program||'').toLowerCase().includes(t)||(r.email||'').toLowerCase().includes(t));}
+  if(filterProvider)d=d.filter(r=>r.provider===filterProvider);
+  if(filterReason)d=d.filter(r=>r.reason===filterReason);
+  d.sort((a,b)=>{let av,bv;if(sortKey==='date'){av=new Date(a.date);bv=new Date(b.date);}else if(sortKey==='amount'){av=a.amount;bv=b.amount;}else{av=(a[sortKey]||'').toLowerCase();bv=(b[sortKey]||'').toLowerCase();}return av<bv?-sortDir:av>bv?sortDir:0;});
+  return d;
+}
+
+// ── RENDER ──
+function render(){
+  const filtered=getFiltered();const total=filtered.length;const pages=Math.max(1,Math.ceil(total/PER));if(page>pages)page=1;
+  const slice=filtered.slice((page-1)*PER,page*PER);
+  const tb=document.getElementById('tbody');const em=document.getElementById('empty');const tbl=document.getElementById('main-table');
+  if(!slice.length){tb.innerHTML='';em.style.display='';tbl.style.display='none';}else{em.style.display='none';tbl.style.display='';}
+  tb.innerHTML=slice.map(r=>`
+    <tr onclick="openPanel('${r.fbKey}')" class="${selRow===r.fbKey?'sel':''}">
+      <td><span class="dt">${(r.date||'').replace(', 2026','')}</span></td>
+      <td><div style="display:flex;align-items:center;gap:6px"><div class="pav" style="background:${pc(r.provider)}">${(r.provider||'').split(' ').slice(0,2).map(w=>w[0]).join('')}</div><span class="pn">${r.provider||'—'}</span></div></td>
+      <td><span style="font-size:12px;color:var(--c2)">${r.parent||'—'}</span></td>
+      <td><span class="pg">${r.program||'—'}</span></td>
+      <td><span class="amt">$${Number(r.amount||0).toFixed(2)}</span></td>
+      <td>${rnPill(r.reason)}</td>
+      <td>${rPill(r.refund)}</td>
+      <td>${sPill(r.status)}</td>
+      <td>${oPill(r.outcome)}</td>
+      <td onclick="event.stopPropagation()"><div class="row-actions"><button class="ra-btn ra-edit" onclick="openModal('${r.fbKey}')">Edit</button><button class="ra-btn ra-del" onclick="confirmDelete('${r.fbKey}')">Del</button></div></td>
+    </tr>`).join('');
+  document.getElementById('pg-info').textContent=`${Math.min((page-1)*PER+1,total)}–${Math.min(page*PER,total)} of ${total}`;
+  renderPagination(pages);renderStats();renderSidebar();updateAvatar();
+}
+
+function renderPagination(pages){
+  const pb=document.getElementById('pg-btns');let h=`<button class="pg-btn" onclick="goPage(${page-1})" ${page===1?'disabled':''}>‹</button>`;
+  for(let i=1;i<=pages;i++)h+=`<button class="pg-btn${i===page?' cur':''}" onclick="goPage(${i})">${i}</button>`;
+  h+=`<button class="pg-btn" onclick="goPage(${page+1})" ${page===pages?'disabled':''}>›</button>`;pb.innerHTML=h;
+}
+window.goPage=p=>{page=p;render()};
+
+function renderStats(){
+  const total=disputes.length,open=disputes.filter(r=>r.status!=='Closed').length,amt=disputes.reduce((s,r)=>s+Number(r.amount||0),0),lost=disputes.filter(r=>r.outcome==='Dispute Lost').length,won=disputes.filter(r=>r.outcome==='Accepted Dispute').length;
+  document.getElementById('open-count').textContent=open;
+  document.getElementById('statsbar').innerHTML=[{l:'Total Disputes',v:total,s:'All time',d:'dot-pur'},{l:'Open',v:open,s:'Needs attention',d:'dot-amb'},{l:'Total at Risk',v:'$'+amt.toFixed(2),s:'Disputed',d:'dot-red'},{l:'Lost',v:lost,s:Math.round(lost/Math.max(total,1)*100)+'% rate',d:'dot-red'},{l:'Won',v:won,s:Math.round(won/Math.max(total,1)*100)+'% rate',d:'dot-grn'}].map(s=>`<div class="stat"><div class="stat-label"><span class="dot ${s.d}"></span>${s.l}</div><div class="stat-val">${s.v}</div><div class="stat-sub">${s.s}</div></div>`).join('');
+}
+
+function renderSidebar(){
+  const providers=[...new Set(disputes.map(r=>r.provider))];
+  document.getElementById('provider-list').innerHTML=providers.map(p=>({p,c:disputes.filter(r=>r.provider===p).length})).sort((a,b)=>b.c-a.c).map(({p,c})=>`<div class="sb-row${filterProvider===p?' active':''}" onclick="setProvider('${p.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')"><div class="pav" style="background:${pc(p)};width:20px;height:20px;font-size:8px;border-radius:3px">${(p||'').split(' ').slice(0,2).map(w=>w[0]).join('')}</div><span class="sb-name">${p}</span><span class="sb-ct${c>=5?' hot':c>=3?' med':''}">${c}</span></div>`).join('');
+  const reasons=[...new Set(disputes.map(r=>r.reason))];
+  document.getElementById('reason-list').innerHTML=reasons.map(r=>{const c=disputes.filter(d=>d.reason===r).length;return`<div class="sb-row"><span class="sb-name">${r||'Unknown'}</span><span class="sb-ct${r==='Fraudulent'?' hot':''}">${c}</span></div>`;}).join('');
+}
+
+// ── INTERACTIONS ──
+window.setProvider=p=>{filterProvider=filterProvider===p?'':p;page=1;render()};
+window.toggleFilter=r=>{filterReason=filterReason===r?'':r;page=1;['f-fraud','f-dup','f-sub'].forEach(id=>document.getElementById(id).classList.remove('on'));if(r==='Fraudulent')document.getElementById('f-fraud').classList.add('on');if(r==='Duplicate')document.getElementById('f-dup').classList.add('on');if(r==='Subscription canceled')document.getElementById('f-sub').classList.add('on');render();};
+window.sortBy=k=>{if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=-1;}['date','provider','parent','amount'].forEach(x=>{const el=document.getElementById('s-'+x);if(el)el.textContent='↕';});const el=document.getElementById('s-'+k);if(el)el.textContent=sortDir===1?'↑':'↓';render();};
+document.getElementById('search-input').addEventListener('input',function(){search=this.value;page=1;render()});
+
+// ── PANEL ──
+window.openPanel=fbKey=>{
+  const r=disputes.find(x=>x.fbKey===fbKey);if(!r)return;
+  selRow=fbKey;render();
+  document.getElementById('dp-title').textContent='Dispute '+(r.id||'');
+  document.getElementById('dp-sub').textContent=(r.provider||'')+'·'+(r.parent||'');
+  const events=[{ev:'Dispute submitted by '+r.parent,ts:r.date,col:'#6366f1'},{ev:'Payment on Stripe',ts:r.payDate,col:'#0ea5e9'},r.evidence==='Yes'?{ev:'Evidence submitted',ts:r.deadline+' (deadline)',col:'#10b981'}:null,r.status==='Closed'?{ev:'Case closed — '+(r.outcome||'no outcome'),ts:r.deadline,col:r.outcome==='Dispute Lost'?'#ef4444':'#10b981'}:null].filter(Boolean);
+  document.getElementById('dp-body').innerHTML=`
+    <div class="dp-sec"><div class="dp-sec-title">Dispute Info</div>
+      <div class="dp-field"><span class="dp-k">Amount</span><span class="dp-v" style="color:var(--red);font-weight:700">$${Number(r.amount||0).toFixed(2)}</span></div>
+      <div class="dp-field"><span class="dp-k">Reason</span><span class="dp-v">${rnPill(r.reason)}</span></div>
+      <div class="dp-field"><span class="dp-k">Status</span><span class="dp-v">${sPill(r.status)}</span></div>
+      <div class="dp-field"><span class="dp-k">Outcome</span><span class="dp-v">${oPill(r.outcome)}</span></div>
+      <div class="dp-field"><span class="dp-k">Refund Issued</span><span class="dp-v">${rPill(r.refund)}</span></div>
+      <div class="dp-field"><span class="dp-k">Charged Client?</span><span class="dp-v">${r.charged||'—'}</span></div>
+    </div>
+    <div class="dp-sec"><div class="dp-sec-title">Parties</div>
+      <div class="dp-field"><span class="dp-k">Provider</span><span class="dp-v" style="font-size:10px">${r.provider||'—'}</span></div>
+      <div class="dp-field"><span class="dp-k">Parent</span><span class="dp-v">${r.parent||'—'}</span></div>
+      <div class="dp-field"><span class="dp-k">Email</span><span class="dp-v" style="color:var(--acc)">${r.email||'—'}</span></div>
+      <div class="dp-field"><span class="dp-k">Program</span><span class="dp-v" style="font-size:10px">${r.program||'—'}</span></div>
+    </div>
+    <div class="dp-sec"><div class="dp-sec-title">Dates</div>
+      <div class="dp-field"><span class="dp-k">Submitted</span><span class="dp-v">${r.date||'—'}</span></div>
+      <div class="dp-field"><span class="dp-k">Payment Date</span><span class="dp-v">${r.payDate||'—'}</span></div>
+      <div class="dp-field"><span class="dp-k">Respond By</span><span class="dp-v">${r.deadline||'—'}</span></div>
+      <div class="dp-field"><span class="dp-k">Evidence</span><span class="dp-v">${r.evidence==='Yes'?'<span class="pill p-grn">✓ Yes</span>':'<span class="pill p-red">✗ No</span>'}</span></div>
+    </div>
+    <div class="dp-sec"><div class="dp-sec-title">Timeline</div>
+      ${events.map((e,i)=>`<div class="tl-item"><div class="tl-dot-wrap"><div class="tl-dot" style="background:${e.col}"></div>${i<events.length-1?'<div class="tl-line"></div>':''}</div><div><div class="tl-ev">${e.ev}</div><div class="tl-ts">${e.ts||''}</div></div></div>`).join('')}
+    </div>
+    ${r.addedBy?`<div class="added-by">Added by <strong>${r.addedBy}</strong>${r.addedAt?' · '+new Date(r.addedAt).toLocaleDateString():''}</div>`:''}
+    <div class="dp-acts">
+      <button class="dp-btn primary" onclick="openModal('${fbKey}');closePanel()">✏ Edit</button>
+      <button class="dp-btn danger" onclick="confirmDelete('${fbKey}');closePanel()">🗑 Delete</button>
+    </div>`;
+  document.getElementById('dpanel').classList.add('open');
+  document.getElementById('overlay').classList.add('show');
+};
+window.closePanel=()=>{document.getElementById('dpanel').classList.remove('open');document.getElementById('overlay').classList.remove('show');selRow=null;render();};
+
+// ── MODAL ──
+window.openModal=fbKey=>{
+  editId=fbKey||null;
+  document.getElementById('modal-title').textContent=fbKey?'Edit Dispute':'Add Dispute';
+  if(fbKey){
+    const r=disputes.find(x=>x.fbKey===fbKey);
+    if(r){document.getElementById('f-date').value=r.date||'';document.getElementById('f-paydate').value=r.payDate||'';document.getElementById('f-provider').value=r.provider||'';document.getElementById('f-parent').value=r.parent||'';document.getElementById('f-email').value=r.email||'';document.getElementById('f-program').value=r.program||'';document.getElementById('f-amount').value=r.amount||'';document.getElementById('f-reason').value=r.reason||'';document.getElementById('f-refund').value=r.refund||'';document.getElementById('f-deadline').value=r.deadline||'';document.getElementById('f-evidence').value=r.evidence||'';document.getElementById('f-status').value=r.status||'';document.getElementById('f-outcome').value=r.outcome||'';document.getElementById('f-charged').value=r.charged||'';}
+  } else {
+    ['date','paydate','provider','parent','email','program','amount','reason','refund','deadline','evidence','status','outcome','charged'].forEach(f=>document.getElementById('f-'+f).value='');
+    document.getElementById('f-date').value=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  }
+  document.getElementById('modal').classList.add('show');
+};
+window.closeModal=()=>{document.getElementById('modal').classList.remove('show');editId=null;};
+
+window.saveDispute=async()=>{
+  const d={
+    date:document.getElementById('f-date').value.trim(),
+    payDate:document.getElementById('f-paydate').value.trim(),
+    provider:document.getElementById('f-provider').value.trim(),
+    parent:document.getElementById('f-parent').value.trim(),
+    email:document.getElementById('f-email').value.trim(),
+    program:document.getElementById('f-program').value.trim(),
+    amount:parseFloat(document.getElementById('f-amount').value)||0,
+    reason:document.getElementById('f-reason').value,
+    refund:document.getElementById('f-refund').value,
+    deadline:document.getElementById('f-deadline').value.trim(),
+    evidence:document.getElementById('f-evidence').value,
+    status:document.getElementById('f-status').value,
+    outcome:document.getElementById('f-outcome').value,
+    charged:document.getElementById('f-charged').value,
+    addedBy:userName,
+    addedAt:new Date().toISOString(),
+  };
+  if(!d.provider||!d.parent){showToast('Provider and Parent Name are required','err');return;}
+  try{
+    if(editId){
+      const existing=disputes.find(x=>x.fbKey===editId);
+      d.id=existing?.id||'D?';
+      d.addedBy=existing?.addedBy||userName;
+      d.addedAt=existing?.addedAt||d.addedAt;
+      d.updatedBy=userName;
+      d.updatedAt=new Date().toISOString();
+      await set(ref(db,'disputes/'+editId),d);
+    }else{
+      const nums=disputes.map(x=>parseInt((x.id||'D0').slice(1))||0);
+      d.id='D'+String(Math.max(0,...nums)+1).padStart(3,'0');
+      await push(disputesRef,d);
+    }
+    closeModal();showToast(editId?'Dispute updated ✓':'Dispute added ✓','grn');
+  }catch(e){showToast('Save failed — check connection','err');}
+};
+
+// ── DELETE ──
+window.confirmDelete=fbKey=>{
+  pendingDelete=fbKey;
+  document.getElementById('confirm-box').classList.add('show');
+  document.getElementById('confirm-yes').onclick=async()=>{
+    try{await remove(ref(db,'disputes/'+pendingDelete));hideConfirm();showToast('Dispute deleted','');}
+    catch(e){showToast('Delete failed','err');}
+  };
+};
+window.hideConfirm=()=>{document.getElementById('confirm-box').classList.remove('show');pendingDelete=null;};
+
+// ── EXPORT ──
+window.exportCSV=()=>{
+  const h=['ID','Date Submitted','Provider','Parent Name','Email','Program','Payment Date','Amount','Reason','Refund','Deadline','Evidence','Status','Outcome','Charged Client','Added By'];
+  const rows=disputes.map(r=>[r.id,r.date,r.provider,r.parent,r.email,r.program,r.payDate,r.amount,r.reason,r.refund,r.deadline,r.evidence,r.status,r.outcome,r.charged,r.addedBy].map(v=>`"${(v||'').toString().replace(/"/g,'""')}"`).join(','));
+  const csv=[h.join(','),...rows].join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='disputes_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+  showToast('CSV exported ✓','grn');
+};
+
+// ── TOAST ──
+window.showToast=(msg,type)=>{const t=document.getElementById('toast');t.textContent=msg;t.className='toast'+(type?' '+type:'');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);};
+</script>
+</body>
+</html>
